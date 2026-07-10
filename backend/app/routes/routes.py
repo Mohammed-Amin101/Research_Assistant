@@ -2,14 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, status,File, UploadFile
 from sqlalchemy.orm import Session
 from app.crud import crud
 from app.dependencies import get_db
-from app.schemas.schemas import DocumentCreate, DocumentResponse
+from app.schemas.schemas import DocumentCreate, DocumentResponse,UploadDocumentResponse
 from pathlib import Path
 from app.parser import extract_text
 from app.ai import summarize_text
 from app.parser import extract_text
 from app.crud import crud
 import uuid
-from app.logger import logger
+from typing import List
+from app.ai import answer_question
+from app.schemas.schemas import (
+    QuestionRequest,
+    AnswerResponse,
+)
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -23,7 +28,7 @@ ALLOWED_EXTENSIONS = {
 
 @router.post(
     "/upload",
-    response_model=DocumentResponse,
+    response_model=UploadDocumentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
@@ -70,7 +75,10 @@ async def upload_document(
     )
     
 
-    return document
+    return {
+    "message": "Document uploaded successfully.",
+    "document": document,
+    }
 
 @router.post(
     "/",
@@ -89,15 +97,57 @@ def create_document(
         summary=document.summary,
     )
 
+@router.post(
+    "/{document_id}/ask",
+    response_model=AnswerResponse,
+)
+def ask_question(
+    document_id: int,
+    request: QuestionRequest,
+    db: Session = Depends(get_db),
+):
 
-@router.get("/", response_model=list[DocumentResponse])
-def get_documents(
+    document = crud.get_document(db, document_id)
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+    answer = answer_question(
+        document.original_text,
+        request.question,
+    )
+
+    return {
+        "answer": answer
+    }
+
+
+@router.get("/", response_model=List[DocumentResponse])
+def get_all_documents(
     db: Session = Depends(get_db),
 ):
     return crud.get_documents(db)
 
+@router.get(
+    "/search",
+    response_model=List[DocumentResponse],
+)
+def search_documents(
+    query: str,
+    db: Session = Depends(get_db),
+):
+    return crud.search_documents(db, query)
+@router.delete(
+    "/{document_id}"
+)
 
-@router.get("/{document_id}", response_model=DocumentResponse)
+@router.get(
+    "/{document_id}",
+    response_model=DocumentResponse
+)
 def get_document(
     document_id: int,
     db: Session = Depends(get_db),
@@ -107,13 +157,13 @@ def get_document(
     if document is None:
         raise HTTPException(
             status_code=404,
-            detail="Document not found",
+            detail="Document not found."
         )
 
     return document
 
 
-@router.delete("/{document_id}")
+
 def delete_document(
     document_id: int,
     db: Session = Depends(get_db),
@@ -123,11 +173,11 @@ def delete_document(
     if document is None:
         raise HTTPException(
             status_code=404,
-            detail="Document not found",
+            detail="Document not found."
         )
 
     crud.delete_document(db, document)
 
     return {
-        "message": "Document deleted successfully"
+        "message": "Document deleted successfully."
     }

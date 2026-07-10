@@ -5,16 +5,12 @@ from pypdf import PdfReader
 
 
 def extract_txt(file_path: Path) -> str:
-    """
-    Extract text from a TXT file.
-    """
+
     return file_path.read_text(encoding="utf-8")
 
 
 def extract_pdf(file_path: Path) -> str:
-    """
-    Extract text from a PDF file.
-    """
+
     reader = PdfReader(file_path)
 
     text = ""
@@ -29,9 +25,7 @@ def extract_pdf(file_path: Path) -> str:
 
 
 def extract_docx(file_path: Path) -> str:
-    """
-    Extract text from a DOCX file.
-    """
+ 
     document = Document(file_path)
 
     return "\n".join(
@@ -41,9 +35,7 @@ def extract_docx(file_path: Path) -> str:
 
 
 def extract_text(file_path: Path) -> str:
-    """
-    Detect file type and extract text.
-    """
+
 
     suffix = file_path.suffix.lower()
 
