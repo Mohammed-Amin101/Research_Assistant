@@ -140,9 +140,25 @@ def search_documents(
     db: Session = Depends(get_db),
 ):
     return crud.search_documents(db, query)
-@router.delete(
-    "/{document_id}"
-)
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    document = crud.get_document(db, document_id)
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found."
+        )
+
+    crud.delete_document(db, document)
+
+    return {
+        "message": "Document deleted successfully."
+    }
 
 @router.get(
     "/{document_id}",
@@ -164,20 +180,20 @@ def get_document(
 
 
 
-def delete_document(
-    document_id: int,
-    db: Session = Depends(get_db),
-):
-    document = crud.get_document(db, document_id)
+# def delete_document(
+#     document_id: int,
+#     db: Session = Depends(get_db),
+# ):
+#     document = crud.get_document(db, document_id)
 
-    if document is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Document not found."
-        )
+#     if document is None:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="Document not found."
+#         )
 
-    crud.delete_document(db, document)
+#     crud.delete_document(db, document)
 
-    return {
-        "message": "Document deleted successfully."
-    }
+#     return {
+#         "message": "Document deleted successfully."
+#     }

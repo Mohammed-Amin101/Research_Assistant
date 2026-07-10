@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Document } from "@/types";
 
-export const API_BASE_URL = "http://127.0.0.1:8000";
+export const API_BASE_URL = "http://localhost:8000";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +10,7 @@ export const api = axios.create({
 
 export const documentsApi = {
   list: async (): Promise<Document[]> => {
-    const { data } = await api.get<Document[]>("/documents");
+    const { data } = await api.get<Document[]>("/documents/");
     return data;
   },
   get: async (id: number | string): Promise<Document> => {

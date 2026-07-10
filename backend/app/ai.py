@@ -5,7 +5,6 @@ from app.config import settings
 client = Groq(
     api_key=settings.groq_api_key,
 )
-print("Groq Key:",settings.groq_api_key)
 
 def summarize_text(text: str) -> str:
 
