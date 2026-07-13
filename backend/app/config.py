@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # IMPORTANT: override secret_key in your real .env file with a long random
     # value (e.g. `python -c "import secrets; print(secrets.token_hex(32))"`).
     # This default is only here so the app doesn't crash out of the box.
-    secret_key: str = "CHANGE_ME_dev_only_insecure_secret_key"
+    secret_key: str = "amin"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24  # 24 hours
 

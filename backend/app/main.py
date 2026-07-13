@@ -13,10 +13,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-origins = [
-    "http://localhost:5173",
-    "https://research-assistant-git-main-mohammed-amin101s-projects.vercel.app",
-]
 
 # CORS configuration - allow all origins for now
 app.add_middleware(

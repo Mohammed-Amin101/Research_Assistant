@@ -6,15 +6,29 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.database import Base
-from app.models import models
+from app.models.models import User, Document
 from app.config import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+database_url = settings.database_url
+
+# Convert old postgres:// URLs
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace(
+        "postgres://",
+        "postgresql+psycopg://",
+        1,
+    )
+
+# Remove Supabase query parameters if present
+if "supabase.com" in database_url:
+    database_url = database_url.split("?")[0]
+
 config.set_main_option(
     "sqlalchemy.url",
-    settings.database_url,
+    database_url,
 )
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
