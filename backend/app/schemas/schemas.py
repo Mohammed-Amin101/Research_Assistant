@@ -29,3 +29,38 @@ class QuestionRequest(BaseModel):
 
 class AnswerResponse(BaseModel):
     answer: str
+
+# --- Auth / RBAC schemas ---
+
+from app.models.models import UserRole
+
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    full_name: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    role: UserRole
+    is_active: bool
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
+class TokenData(BaseModel):
+    user_id: int | None = None
+
+
+class RoleUpdate(BaseModel):
+    role: UserRole
