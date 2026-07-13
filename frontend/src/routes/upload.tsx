@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import toast from "react-hot-toast";
 import { UploadArea } from "@/components/UploadArea";
 import { documentsApi } from "@/services/api";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -13,7 +14,11 @@ export const Route = createFileRoute("/upload")({
       { name: "description", content: "Upload a PDF, DOCX or TXT document for AI summarization." },
     ],
   }),
-  component: UploadPage,
+  component: () => (
+    <ProtectedRoute>
+      <UploadPage />
+    </ProtectedRoute>
+  ),
 });
 
 function UploadPage() {

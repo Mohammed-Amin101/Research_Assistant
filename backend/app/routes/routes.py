@@ -1,19 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status,File, UploadFile
-from sqlalchemy.orm import Session
-from app.crud import crud
-from app.dependencies import get_db
-from app.schemas.schemas import DocumentCreate, DocumentResponse,UploadDocumentResponse
 from pathlib import Path
-from app.parser import extract_text
-from app.ai import summarize_text
-from app.parser import extract_text
-from app.crud import crud
-import uuid
 from typing import List
-from app.ai import answer_question
+import uuid
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
+
+from app.ai import answer_question, summarize_text
+from app.crud import crud
+from app.dependencies import get_current_user, get_db, require_admin
+from app.models.models import User
+from app.parser import extract_text
 from app.schemas.schemas import (
-    QuestionRequest,
     AnswerResponse,
+    DocumentCreate,
+    DocumentResponse,
+    QuestionRequest,
+    UploadDocumentResponse,
 )
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -26,6 +28,10 @@ ALLOWED_EXTENSIONS = {
     ".docx",
 }
 
+# All document routes require a logged-in user (any role). Deleting a
+# document additionally requires the admin role — see require_admin below.
+
+
 @router.post(
     "/upload",
     response_model=UploadDocumentResponse,
@@ -34,19 +40,16 @@ ALLOWED_EXTENSIONS = {
 async def upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    print("Uploading...")
-    from pathlib import Path
     extension = Path(file.filename).suffix.lower()
 
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail="Only PDF, DOCX and TXT files are allowed."
+            detail="Only PDF, DOCX and TXT files are allowed.",
         )
-    unique_filename = (
-        f"{uuid.uuid4()}{Path(file.filename).suffix}"
-    )
+    unique_filename = f"{uuid.uuid4()}{Path(file.filename).suffix}"
     file_path = UPLOAD_DIR / unique_filename
 
     with open(file_path, "wb") as buffer:
@@ -57,6 +60,9 @@ async def upload_document(
         summary = summarize_text(extracted_text)
 
     except Exception as e:
+        import traceback
+        print(f"ERROR in document processing: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail=f"Processing failed: {str(e)}",
@@ -73,12 +79,12 @@ async def upload_document(
         original_text=extracted_text,
         summary=summary,
     )
-    
 
     return {
-    "message": "Document uploaded successfully.",
-    "document": document,
+        "message": "Document uploaded successfully.",
+        "document": document,
     }
+
 
 @router.post(
     "/",
@@ -88,6 +94,7 @@ async def upload_document(
 def create_document(
     document: DocumentCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return crud.create_document(
         db=db,
@@ -97,6 +104,7 @@ def create_document(
         summary=document.summary,
     )
 
+
 @router.post(
     "/{document_id}/ask",
     response_model=AnswerResponse,
@@ -105,14 +113,14 @@ def ask_question(
     document_id: int,
     request: QuestionRequest,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-
     document = crud.get_document(db, document_id)
 
     if document is None:
         raise HTTPException(
             status_code=404,
-            detail="Document not found."
+            detail="Document not found.",
         )
 
     answer = answer_question(
@@ -121,15 +129,17 @@ def ask_question(
     )
 
     return {
-        "answer": answer
+        "answer": answer,
     }
 
 
 @router.get("/", response_model=List[DocumentResponse])
 def get_all_documents(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return crud.get_documents(db)
+
 
 @router.get(
     "/search",
@@ -138,62 +148,47 @@ def get_all_documents(
 def search_documents(
     query: str,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return crud.search_documents(db, query)
+
 
 @router.delete("/{document_id}")
 def delete_document(
     document_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
     document = crud.get_document(db, document_id)
 
     if document is None:
         raise HTTPException(
             status_code=404,
-            detail="Document not found."
+            detail="Document not found.",
         )
 
     crud.delete_document(db, document)
 
     return {
-        "message": "Document deleted successfully."
+        "message": "Document deleted successfully.",
     }
+
 
 @router.get(
     "/{document_id}",
-    response_model=DocumentResponse
+    response_model=DocumentResponse,
 )
 def get_document(
     document_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     document = crud.get_document(db, document_id)
 
     if document is None:
         raise HTTPException(
             status_code=404,
-            detail="Document not found."
+            detail="Document not found.",
         )
 
     return document
-
-
-
-# def delete_document(
-#     document_id: int,
-#     db: Session = Depends(get_db),
-# ):
-#     document = crud.get_document(db, document_id)
-
-#     if document is None:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="Document not found."
-#         )
-
-#     crud.delete_document(db, document)
-
-#     return {
-#         "message": "Document deleted successfully."
-#     }

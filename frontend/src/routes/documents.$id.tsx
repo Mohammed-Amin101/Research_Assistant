@@ -15,6 +15,8 @@ import type { Document } from "@/types";
 import { Loader } from "@/components/Loader";
 import { ChatBox } from "@/components/ChatBox";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/documents/$id")({
   head: () => ({
@@ -24,7 +26,11 @@ export const Route = createFileRoute("/documents/$id")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: DocumentDetails,
+  component: () => (
+    <ProtectedRoute>
+      <DocumentDetails />
+    </ProtectedRoute>
+  ),
 });
 
 function formatDate(iso: string) {
@@ -39,6 +45,7 @@ function formatDate(iso: string) {
 }
 
 function DocumentDetails() {
+  const { isAdmin } = useAuth();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [doc, setDoc] = useState<Document | null>(null);
@@ -143,13 +150,15 @@ function DocumentDetails() {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setConfirmOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setConfirmOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
+        )}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-5">
