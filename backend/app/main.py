@@ -12,9 +12,11 @@ app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
 )
+
+# CORS configuration - allow all origins for now
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,5 +36,8 @@ def read_root() -> dict[str, str]:
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)) -> dict[str, str]:
-    db.execute(text("SELECT 1"))
-    return {"status": "Database connection is healthy"}
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "Database connection is healthy"}
+    except Exception as e:
+        return {"status": f"Database error: {str(e)}"}
