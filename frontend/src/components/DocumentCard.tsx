@@ -5,6 +5,8 @@ import type { Document } from "@/types";
 interface Props {
   doc: Document;
   onDelete: (doc: Document) => void;
+  /** Only admins are allowed to delete documents (RBAC). */
+  canDelete?: boolean;
 }
 
 function iconFor(type: string) {
@@ -26,7 +28,7 @@ function formatDate(iso: string) {
   }
 }
 
-export function DocumentCard({ doc, onDelete }: Props) {
+export function DocumentCard({ doc, onDelete, canDelete = false }: Props) {
   const { Icon, color } = iconFor(doc.file_type);
   const preview = (doc.summary || "").slice(0, 150);
 
@@ -63,14 +65,16 @@ export function DocumentCard({ doc, onDelete }: Props) {
           <Eye className="h-4 w-4" />
           View
         </Link>
-        <button
-          type="button"
-          onClick={() => onDelete(doc)}
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-2 text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
-          aria-label="Delete document"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete(doc)}
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-background p-2 text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
+            aria-label="Delete document"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

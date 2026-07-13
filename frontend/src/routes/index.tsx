@@ -8,6 +8,8 @@ import { DocumentCard } from "@/components/DocumentCard";
 import { SearchBar } from "@/components/SearchBar";
 import { SkeletonCard, Loader } from "@/components/Loader";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,10 +18,15 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Manage and search your uploaded research documents." },
     ],
   }),
-  component: Dashboard,
+  component: () => (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
+  ),
 });
 
 function Dashboard() {
+  const { isAdmin } = useAuth();
   const [docs, setDocs] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -158,7 +165,12 @@ function Dashboard() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((d) => (
-              <DocumentCard key={d.id} doc={d} onDelete={setPendingDelete} />
+              <DocumentCard
+                key={d.id}
+                doc={d}
+                onDelete={setPendingDelete}
+                canDelete={isAdmin}
+              />
             ))}
           </div>
         )}

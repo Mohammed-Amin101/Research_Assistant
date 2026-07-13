@@ -13,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "../components/Navbar";
+import { AuthProvider } from "../lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -120,19 +121,21 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </main>
-      </div>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          className: "!bg-card !text-foreground !border !border-border !shadow-md !rounded-xl",
-        }}
-      />
+      <AuthProvider>
+        <div className="min-h-screen bg-background">
+          <Navbar />
+          <main>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </main>
+        </div>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: "!bg-card !text-foreground !border !border-border !shadow-md !rounded-xl",
+          }}
+        />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
